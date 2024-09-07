@@ -1,4 +1,5 @@
 #include "primefinder.h"
+#include "primefinderexception.h"
 
 #include <QThread>
 #include <QDebug>
@@ -10,10 +11,10 @@
 PrimeFinder::PrimeFinder(int startNumber, int endNumber, int threadNumber, QObject *parent)
     : QObject(parent), m_startNumber(startNumber), m_endNumber(endNumber), m_threadNumber(threadNumber)
 {
+    // Handle exceptions
     if (m_startNumber > m_endNumber)
     {
-        throw std::invalid_argument("startNum cannot be greater than endNum");
-        // TODO: use Qt's error handling mechanisms to throw exceptions instead of c std library
+        throw PrimeFinderException("startNumber cannot be greater than endNumber");
     }
 }
 
