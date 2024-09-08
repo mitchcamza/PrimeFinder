@@ -17,6 +17,7 @@ The application also allows users to stop the threads mid-execution, and it hand
 - **Thread Management**: Threads are created, started, and managed manually using `QThread` and custom worker objects (`PrimeFinder`).
 - **Cross-Platform**: Built with Qt, the application runs on Windows, macOS, and Linux.
 
+![alt text](<Screenshot 2024-09-08 at 15.19.15.png>)
 ---
 
 ## How It Works
