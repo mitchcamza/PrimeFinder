@@ -1,3 +1,12 @@
+/**
+ * @file widget.cpp
+ * @author Mitch Campbell
+ * @brief This file contains the implementation for the Widget class.
+ * @date 2024-09-08
+ * @copyright Copyright (c) 2024
+ */
+
+
 #include "widget.h"
 #include "primefinder.h"
 
@@ -43,7 +52,7 @@ void Widget::closeEvent(QCloseEvent *event)
 void Widget::setupUI()
 {
     // Window properties
-    setWindowTitle("Multithreaded Prime Finder");
+    setWindowTitle("Prime Finder");
     resize(640, 480);
 
     // Configure widgets

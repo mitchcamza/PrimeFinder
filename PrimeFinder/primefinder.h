@@ -1,3 +1,12 @@
+/**
+ * @file primefinder.h
+ * @author Mitch Campbell
+ * @brief This file contains the declaration for the PrimeFinder class.
+ * @date 2024-09-08
+ * @copyright Copyright (c) 2024
+ */
+
+
 #ifndef PRIMEFINDER_H
 #define PRIMEFINDER_H
 
