@@ -1,3 +1,12 @@
+/**
+ * @file primefinder.cpp
+ * @author Mitch Campbell
+ * @brief This file contains the implementation for the PrimeFinder class.
+ * @date 2024-09-08
+ * @copyright Copyright (c) 2024
+ */
+
+
 #include "primefinder.h"
 #include "primefinderexception.h"
 
