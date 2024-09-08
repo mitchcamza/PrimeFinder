@@ -4,18 +4,24 @@
 #include <QThread>
 #include <QDebug>
 
-// #include <cmath>
-// #include <stdexcept>
-
 
 PrimeFinder::PrimeFinder(int startNumber, int endNumber, int threadNumber, QObject *parent)
-    : QObject(parent), m_startNumber(startNumber), m_endNumber(endNumber), m_threadNumber(threadNumber)
+    : QObject(parent),
+    m_startNumber(startNumber),
+    m_endNumber(endNumber),
+    m_threadNumber(threadNumber),
+    m_shouldStop(false)
 {
     // Handle exceptions
     if (m_startNumber > m_endNumber)
     {
         throw PrimeFinderException("startNumber cannot be greater than endNumber");
     }
+}
+
+void PrimeFinder::stop()
+{
+    m_shouldStop = true;
 }
 
 bool PrimeFinder::isPrime(int numberToCheck)
@@ -41,6 +47,13 @@ void PrimeFinder::findPrimes()
     int totalNumbers = m_endNumber - m_startNumber + 1;  // Calculate the total number of numbers to check
     for (int count = m_startNumber; count <= m_endNumber; count++)
     {
+        // Check if the stop flag is set
+        if (m_shouldStop)
+        {
+            emit finished();
+            return;
+        }
+
         if (isPrime(count))
         {
             emit foundPrime(m_threadNumber, count);  // Emit signal when a prime is found
@@ -50,10 +63,8 @@ void PrimeFinder::findPrimes()
         int progress = ((count - m_startNumber) * 100) / totalNumbers;
         emit progressUpdated(progress);
 
-        // Optional: Slow down the process for testing
+        // Slow down the process for illustration and to allow the user to stop progressing threads
         QThread::msleep(50);
     }
-
-    qDebug() << "Ending findPrimes() for thread " << m_threadNumber;
     emit finished();  // Emit signal when the thread completes
 }

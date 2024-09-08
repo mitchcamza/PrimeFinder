@@ -4,6 +4,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSpinBox>
@@ -20,7 +21,8 @@ Widget::Widget(QWidget *parent)
     spinBoxThreads(new QSpinBox(this)),
     pushButtonStart(new QPushButton("Start", this)),
     pushButtonStop(new QPushButton("Stop", this)),
-    activeThreads(0)
+    activeThreads(0),
+    userInitiatedStop(false)
 {
     setupUI();
     connect(pushButtonStart, &QPushButton::clicked, this, &Widget::startThreads);
@@ -30,6 +32,12 @@ Widget::Widget(QWidget *parent)
 Widget::~Widget()
 {
     stopThreads();
+}
+
+void Widget::closeEvent(QCloseEvent *event)
+{
+    stopThreads();
+    event->accept();
 }
 
 void Widget::setupUI()
@@ -80,11 +88,45 @@ void Widget::setupUI()
     setLayout(mainLayout);
 }
 
+void Widget::displayPrime(int threadNumber, int prime)
+{
+    switch (threadNumber)
+    {
+        case 0:
+        {
+            primeDisplay[0]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 1:
+        {
+            primeDisplay[1]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 2:
+        {
+            primeDisplay[2]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 3:
+        {
+            primeDisplay[3]->appendPlainText(QString::number(prime));
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
 void Widget::startThreads()
 {
     // Set initial button status
     pushButtonStart->setEnabled(false);
     pushButtonStop->setEnabled(true);
+
+    // Reset flags
+    userInitiatedStop = false;
 
     // Clear the display widgets
     for (int i = 0; i < MAX_THREADS; i++)
@@ -124,9 +166,8 @@ void Widget::startThreads()
         // Connect signals and slots for thread communication
         connect(thread, &QThread::started, finder, &PrimeFinder::findPrimes);
         connect(finder, &PrimeFinder::foundPrime, this, &Widget::displayPrime);
-        connect(finder, &PrimeFinder::finished, thread, &QThread::quit);
-        connect(finder, &PrimeFinder::finished, finder, &PrimeFinder::deleteLater);
         connect(finder, &PrimeFinder::finished, this, &Widget::threadFinished);
+        connect(finder, &PrimeFinder::finished, finder, &PrimeFinder::deleteLater);
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
         // Start the thread
@@ -142,53 +183,37 @@ void Widget::startThreads()
 
 void Widget::stopThreads()
 {
+    // Set flags
+    userInitiatedStop = true;
+
+    // Signal all workers to stop their work
+    for (PrimeFinder *finder : primeFinderList)
+    {
+        // Ensure that the finder exists before attempting to stop it
+        if (finder)
+        {
+            finder->stop();
+        }
+    }
+
     // Stop all threads and wait for them to finish
     for (QThread *thread : threadList)
     {
-        if (thread->isRunning())
+        if (thread && thread->isRunning())
         {
             thread->quit();
             thread->wait();
         }
     }
 
-    // Cleanup
-    threadList.clear();
-    primeFinderList.clear();
+    // Cleanup only if this stop was user-initiated
+    if (userInitiatedStop)
+    {
+        cleanupThreads();
+    }
 
     pushButtonStart->setEnabled(true);
     pushButtonStop->setEnabled(false);
-}
-
-void Widget::displayPrime(int threadNumber, int prime)
-{
-    switch (threadNumber)   // TODO: Refactor
-    {
-        case 0:
-        {
-            primeDisplay[0]->appendPlainText(QString::number(prime));
-            break;
-        }
-        case 1:
-        {
-            primeDisplay[1]->appendPlainText(QString::number(prime));
-            break;
-        }
-        case 2:
-        {
-            primeDisplay[2]->appendPlainText(QString::number(prime));
-            break;
-        }
-        case 3:
-        {
-            primeDisplay[3]->appendPlainText(QString::number(prime));
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
 }
 
 void Widget::threadFinished()
@@ -196,10 +221,23 @@ void Widget::threadFinished()
     // Decrease the count of the active threads
     activeThreads--;
 
+    // Only perform cleanup when all threads have finished
+    if (activeThreads == 0 && !userInitiatedStop)
+    {
+        cleanupThreads();
+    }
+
     // Enable the start button once all threads are done
     if (activeThreads == 0)
     {
         pushButtonStart->setEnabled(true);
         pushButtonStop->setEnabled(false);
     }
+}
+
+void Widget::cleanupThreads()
+{
+    // Cleanup threads
+    threadList.clear();
+    primeFinderList.clear();
 }
