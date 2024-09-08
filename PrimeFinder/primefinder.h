@@ -20,6 +20,11 @@ public:
      */
     explicit PrimeFinder(int startNumber, int endNumber, int threadNumber, QObject *parent = nullptr);
 
+    /**
+     * @brief Signal the thread to stop
+     */
+    void stop();
+
 signals:
     /**
      * @brief Signal emitted when a prime number is found.
@@ -56,6 +61,7 @@ private:
     int m_startNumber;      /**< The starting number of the range. */
     int m_endNumber;        /**< The ending number of the range. */
     int m_threadNumber;     /**< The thread number to differentiate multiple threads. */
+    bool m_shouldStop;      /**< Flag to stop the thread. */
 };
 
 #endif // PRIMEFINDER_H

@@ -23,6 +23,9 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void startThreads();
     void stopThreads();
@@ -31,6 +34,7 @@ private slots:
 
 private:
     void setupUI();
+    void cleanupThreads();
 
     QLabel *labelStart;
     QLabel *labelEnd;
@@ -49,6 +53,7 @@ private:
     QList<PrimeFinder*> primeFinderList;
 
     int activeThreads;
+    bool userInitiatedStop; // Track if stop was initiated by the user
 };
 
 #endif // WIDGET_H
