@@ -1,8 +1,12 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include <QList>
+#include <QPlainTextEdit>
+#include <QThread>
 #include <QWidget>
 
+class PrimeFinder;
 class QLabel;
 class QPlainTextEdit;
 class QPushButton;
@@ -20,9 +24,14 @@ public:
     ~Widget();
 
 private slots:
-    void startPrimeSearch();
+    void startThreads();
+    void stopThreads();
+    void displayPrime(int threadNumber, int prime);
+    void threadFinished();
 
 private:
+    void setupUI();
+
     QLabel *labelStart;
     QLabel *labelEnd;
     QLabel *labelThreads;
@@ -31,11 +40,15 @@ private:
     QSpinBox *spinBoxEnd;
     QSpinBox *spinBoxThreads;
 
-    QPushButton *buttonStart;
-    QPushButton *buttonStop;
+    QPushButton *pushButtonStart;
+    QPushButton *pushButtonStop;
 
     QPlainTextEdit *primeDisplay[4]; // For displaying primes found by each thread
-    void setupUI();
+
+    QList<QThread*> threadList;
+    QList<PrimeFinder*> primeFinderList;
+
+    int activeThreads;
 };
 
 #endif // WIDGET_H

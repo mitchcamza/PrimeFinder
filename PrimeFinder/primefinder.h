@@ -55,7 +55,7 @@ private:
 
     int m_startNumber;      /**< The starting number of the range. */
     int m_endNumber;        /**< The ending number of the range. */
-    int m_threadNumber;  /**< The thread number to differentiate multiple threads. */
+    int m_threadNumber;     /**< The thread number to differentiate multiple threads. */
 };
 
 #endif // PRIMEFINDER_H

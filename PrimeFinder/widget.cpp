@@ -1,4 +1,5 @@
 #include "widget.h"
+#include "primefinder.h"
 
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -17,14 +18,19 @@ Widget::Widget(QWidget *parent)
     spinBoxEnd(new QSpinBox(this)),
     labelThreads(new QLabel("Number of Threads:")),
     spinBoxThreads(new QSpinBox(this)),
-    buttonStart(new QPushButton("Start", this)),
-    buttonStop(new QPushButton("Stop", this))
+    pushButtonStart(new QPushButton("Start", this)),
+    pushButtonStop(new QPushButton("Stop", this)),
+    activeThreads(0)
 {
     setupUI();
-    connect(buttonStart, &QPushButton::clicked, this, &Widget::startPrimeSearch);
+    connect(pushButtonStart, &QPushButton::clicked, this, &Widget::startThreads);
+    connect(pushButtonStop, &QPushButton::clicked, this, &Widget::stopThreads);
 }
 
-Widget::~Widget() {}
+Widget::~Widget()
+{
+    stopThreads();
+}
 
 void Widget::setupUI()
 {
@@ -36,7 +42,7 @@ void Widget::setupUI()
     spinBoxStart->setRange(0, 1000);
     spinBoxEnd->setRange(1, 10000);
     spinBoxThreads->setRange(1, MAX_THREADS);
-    buttonStop->setEnabled(false);
+    pushButtonStop->setEnabled(false);
 
     // Create prime display areas (one for each thread)
     for (int i = 0; i < MAX_THREADS; i++)
@@ -46,7 +52,7 @@ void Widget::setupUI()
         primeDisplay[i]->setPlaceholderText(QString("Thread %1 output...").arg(i+1));
     }
 
-    // Layouts
+    /// Layouts
     QGridLayout *inputLayout = new QGridLayout();
     inputLayout->addWidget(labelStart, 0, 0);
     inputLayout->addWidget(spinBoxStart, 0, 1);
@@ -56,16 +62,16 @@ void Widget::setupUI()
     inputLayout->addWidget(spinBoxThreads, 2, 1);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->addWidget(buttonStart);
-    buttonLayout->addWidget(buttonStop);
+    buttonLayout->addWidget(pushButtonStart);
+    buttonLayout->addWidget(pushButtonStop);
 
     QVBoxLayout *primeDisplayLayout = new QVBoxLayout();
     for (int i = 0; i < MAX_THREADS; i++)
     {
+        // Add display areas to layout
         primeDisplayLayout->addWidget(primeDisplay[i]);
     }
 
-    // Main layout
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(inputLayout);
     mainLayout->addLayout(buttonLayout);
@@ -74,10 +80,126 @@ void Widget::setupUI()
     setLayout(mainLayout);
 }
 
-void Widget::startPrimeSearch()
+void Widget::startThreads()
 {
-    buttonStart->setEnabled(false);
-    buttonStop->setEnabled(true);
+    // Set initial button status
+    pushButtonStart->setEnabled(false);
+    pushButtonStop->setEnabled(true);
 
-    // TODO: implement search for prime numbers
+    // Clear the display widgets
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        primeDisplay[i]->clear();
+    }
+
+    // Initialize variables
+    int numThreads = spinBoxThreads->value();
+    activeThreads = numThreads;
+    int startNumber = spinBoxStart->value();
+    int endNumber = spinBoxEnd->value();
+    int range = endNumber - startNumber + 1;
+    int increment = range / numThreads;
+
+    int currentStart = startNumber;
+    int currentEnd = currentStart + increment;
+
+    // Instantiate and start threads
+    for (int i = 0; i < numThreads; i++)
+    {
+        QThread *thread = new QThread();
+        PrimeFinder *finder;
+
+        if (i == numThreads - 1)
+        {
+            finder = new PrimeFinder(currentStart, endNumber, i);
+        }
+        else
+        {
+            finder = new PrimeFinder(currentStart, currentEnd, i);
+        }
+
+        // Move the finder to the new thread
+        finder->moveToThread(thread);
+
+        // Connect signals and slots for thread communication
+        connect(thread, &QThread::started, finder, &PrimeFinder::findPrimes);
+        connect(finder, &PrimeFinder::foundPrime, this, &Widget::displayPrime);
+        connect(finder, &PrimeFinder::finished, thread, &QThread::quit);
+        connect(finder, &PrimeFinder::finished, finder, &PrimeFinder::deleteLater);
+        connect(finder, &PrimeFinder::finished, this, &Widget::threadFinished);
+        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+        // Start the thread
+        threadList.append(thread);
+        primeFinderList.append(finder);
+        thread->start();
+
+        // Update the range for the next thread
+        currentStart = currentEnd + 1;
+        currentEnd += increment;
+    }
+}
+
+void Widget::stopThreads()
+{
+    // Stop all threads and wait for them to finish
+    for (QThread *thread : threadList)
+    {
+        if (thread->isRunning())
+        {
+            thread->quit();
+            thread->wait();
+        }
+    }
+
+    // Cleanup
+    threadList.clear();
+    primeFinderList.clear();
+
+    pushButtonStart->setEnabled(true);
+    pushButtonStop->setEnabled(false);
+}
+
+void Widget::displayPrime(int threadNumber, int prime)
+{
+    switch (threadNumber)   // TODO: Refactor
+    {
+        case 0:
+        {
+            primeDisplay[0]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 1:
+        {
+            primeDisplay[1]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 2:
+        {
+            primeDisplay[2]->appendPlainText(QString::number(prime));
+            break;
+        }
+        case 3:
+        {
+            primeDisplay[3]->appendPlainText(QString::number(prime));
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
+void Widget::threadFinished()
+{
+    // Decrease the count of the active threads
+    activeThreads--;
+
+    // Enable the start button once all threads are done
+    if (activeThreads == 0)
+    {
+        pushButtonStart->setEnabled(true);
+        pushButtonStop->setEnabled(false);
+    }
 }
