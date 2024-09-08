@@ -73,7 +73,7 @@ void Widget::setupUI()
     buttonLayout->addWidget(pushButtonStart);
     buttonLayout->addWidget(pushButtonStop);
 
-    QVBoxLayout *primeDisplayLayout = new QVBoxLayout();
+    QHBoxLayout *primeDisplayLayout = new QHBoxLayout();
     for (int i = 0; i < MAX_THREADS; i++)
     {
         // Add display areas to layout
