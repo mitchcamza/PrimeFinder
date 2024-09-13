@@ -1,5 +1,7 @@
 # PrimeFinder Application
 
+[![Build](https://github.com/mitchcamza/PrimeFinder/actions/workflows/build.yml/badge.svg)](https://github.com/mitchcamza/PrimeFinder/actions/workflows/build.yml)
+
 ## Overview
 
 **PrimeFinder** is a multithreaded Qt application that finds prime numbers within a user-defined range. The user can specify the range of numbers to search for primes, as well as the number of threads that will perform the task concurrently. This project demonstrates manual thread management in Qt using `QThread` and worker objects (`PrimeFinder`).
